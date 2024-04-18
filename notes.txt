@@ -1,0 +1,160 @@
+Step 1 : Create a folder named after login 
+    cd /Volumes/Leo      //my personal usb drive
+    mkdir lagea
+    chmod 700 lagea     //put all perms(r-w-e) to my user 
+
+    allocate 1024 MB for the ram of the VM 
+    choose a virtual hard disk drive of type VDI
+        VDI format used by VirtualBox
+        VHD historical format by Microsoft for VirtualPC
+        VMDK format used by VMWare
+
+    choose allocated dynamically 
+        automaticcly fills up the memory up to the fixed memory size but cannot shrink the memory backwards
+
+    allocate 12GB of memory space
+
+
+Step 2 : Accessing the VM 
+
+    Hostname : lagea42
+    root password : School_19
+
+    User : lagea
+    password : School_19
+
+    partition method : 
+        guided with encrypted LVM
+        separation /home /var /tmp
+
+    encryption password : School_19
+
+    package manager : deb.debian.org  ??
+
+Step 3 : Configuration
+
+    su 
+    apt-get update -y
+    apt-get upgrade -y 
+    apt install sudo  ?? check sudo package
+
+    sudo usermod -aG sudo lagea          
+    sudo visudo  
+        -> # User privilege specification 
+            lagea   ALL=(ALL) ALL
+    
+    apt-get install git -y
+    git --version
+
+    sudo apt install openssh-server
+    sudo systemctl status ssh       //check ssh status
+    sudo nano /etc/ssh/sshd_config
+        find #port 22 
+        replace by port 4242
+    sudo grep Port /etc/ssh/sshd_config
+    sudo service ssh restart
+
+    apt-get install ufw
+    sudo ufw enable 
+    sudo ufw status numbered
+    sudo ufw allow ssh
+    sudo ufw allow 4242
+    sudo ufw status numbered
+
+    Settings of the VM
+    go to network and advanced Settings
+    click on portforwarding 
+    add a rule protocol TCP host port 4242 guest port 4242
+    try to connect to the VM via ssh on iterm 
+        typing : ssh lagea@127.0.0.1 -p 4242
+    
+    sudo apt-get install libpam-pwquality
+    sudo nano /etc/pam.d/common-password
+    find this line : password		requisite		pam_pwquality.so retry=3
+        add this to the line : minlen=10 ucredit=-1 lcredit=-1 dcredit=-1 maxrepeat=3 reject_username difok=7 enforce_for_root
+    sudo vim /etc/login.defs
+    find PASS_MAX_DAYS 9999 PASS_MIN_DAYS 0 PASS_WARN_AGE 7
+        replace by PASS_MAX_DAYS 30 PASS_MIN_DAYS 2 PASS_WARN_AGE 7
+    sudo reboot
+
+    sudo groupadd user42
+    sudo groupadd evaluating
+    getent group
+
+    cut -d: -f1 /etc/passwd
+    sudo adduser nicolive
+    sudo usermod -aG user42 lagea
+    sudo usermod -aG evaluating nic
+    getent group user42
+    getent group evaluating
+    chage -l lagea
+
+    cd ~/../
+    cd var/log
+    mkdir sudo
+    cd sudo && touch sudo.log
+    cd ~/../
+
+    sudo nano /etc/sudoers
+    find    Defaults	env_reset
+            Defaults	mail_badpass
+            Defaults	secure_path="/usr/local/sbin:/usr/local/bin:/usr/bin:/sbin:/bin"
+    add     Defaults	badpass_message="Password is wrong, please try again!"
+            Defaults	passwd_tries=3
+            Defaults	logfile="/var/log/sudo/sudo.log"
+            Defaults	log_input, log_output
+            Defaults	requiretty
+
+    apt-get install -y net-tools
+    cd /usr/local/bin/
+    touch monitoring.sh
+    chmod 777 monitoring.sh
+
+    copy this script :
+            #!/bin/bash
+            arc=$(uname -a)
+            pcpu=$(grep "physical id" /proc/cpuinfo | sort | uniq | wc -l) 
+            vcpu=$(grep "^processor" /proc/cpuinfo | wc -l)
+            fram=$(free -m | awk '$1 == "Mem:" {print $2}')
+            uram=$(free -m | awk '$1 == "Mem:" {print $3}')
+            pram=$(free | awk '$1 == "Mem:" {printf("%.2f"), $3/$2*100}')
+            fdisk=$(df -BG | grep '^/dev/' | grep -v '/boot$' | awk '{ft += $2} END {print ft}')
+            udisk=$(df -BM | grep '^/dev/' | grep -v '/boot$' | awk '{ut += $3} END {print ut}')
+            pdisk=$(df -BM | grep '^/dev/' | grep -v '/boot$' | awk '{ut += $3} {ft+= $2} END {printf("%d"), ut/ft*100}')
+            cpul=$(top -bn1 | grep '^%Cpu' | cut -c 9- | xargs | awk '{printf("%.1f%%"), $1 + $3}')
+            lb=$(who -b | awk '$1 == "system" {print $3 " " $4}')
+            lvmu=$(if [ $(lsblk | grep "lvm" | wc -l) -eq 0 ]; then echo no; else echo yes; fi)
+            ctcp=$(ss -neopt state established | wc -l)
+            ulog=$(users | wc -w)
+            ip=$(hostname -I)
+            mac=$(ip link show | grep "ether" | awk '{print $2}')
+            cmds=$(journalctl _COMM=sudo | grep COMMAND | wc -l)
+            wall "	#Architecture: $arc
+                #CPU physical: $pcpu
+                #vCPU: $vcpu
+                #Memory Usage: $uram/${fram}MB ($pram%)
+                #Disk Usage: $udisk/${fdisk}Gb ($pdisk%)
+                #CPU load: $cpul
+                #Last boot: $lb
+                #LVM use: $lvmu
+                #Connections TCP: $ctcp ESTABLISHED
+                #User log: $ulog
+                #Network: IP $ip ($mac)
+                #Sudo: $cmds cmd"
+    open a terminal and connect with ssh to the VM via lagea@127.0.0.1 -p 4242
+    cd /usr/local/bin
+    nano monitoring.sh
+    copy the scriptand save
+    back to the VM sudo visudo
+    add this line in the #Allow members of group sudo to execute any command 
+        lagea ALL=(ALL) NOPASSWD: /usr/local/bin/monitoring.sh
+    sudo reboot
+    sudo /usr/local/bin/monitoring.sh
+    sudo crontab -u root -e
+    add this rule 
+        */10 * * * * /usr/local/bin/monitoring.sh
+
+    open iterm 
+    go to the place where your VM is
+    shasum VirtualBox.vdi
+    copy the output number into a signature.txt
