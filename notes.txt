@@ -18,16 +18,16 @@ Step 1 : Create a folder named after login
 Step 2 : Accessing the VM 
 
     Hostname : lagea42
-    root password : School_19
+    root password : Admin_1942
 
     User : lagea
-    password : School_19
+    password : School_2024
 
     partition method : 
         guided with encrypted LVM
         separation /home /var /tmp
 
-    encryption password : School_19
+    encryption password : Encryption_Key_19
 
     package manager : deb.debian.org  ??
 
