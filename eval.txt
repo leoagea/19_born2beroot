@@ -1,0 +1,142 @@
+Debian vs Rocky :
+
+    debian : plus ouvert et libre
+    rocky : facilite pour les entreprise sur base CentOS
+
+Apt vs Aptitude :
+
+    En résumé, APT est simple et direct, tandis qu'Aptitude
+    offre une interface plus avancée et des fonctionnalités
+    supplémentaires pour la gestion des paquets. 
+    Le choix entre les deux dépend souvent des préférences
+    personnelles et des besoins spécifiques de l'utilisateur.
+
+AppArmor :
+
+    AppArmor est un système de contrôle d'accès obligatoire
+    qui offre une couche de sécurité supplémentaire en limitant
+    les capacités des applications sur les systèmes Linux,
+    contribuant ainsi à renforcer la sécurité globale du système.
+
+Simple configuration :
+
+    lsb_release -a
+    sudo systemctl ufw status
+    sudo systemctl ssh status
+
+User :
+
+    sudo adduser "nom user"
+    password 
+        sudo apt-get install libpam-pwquality
+        sudo vim /etc/pam.d/common-password
+            password  requisite     pam_pwquality.so  retry=3 minlen=10 ucredit=-1 lcredit=-1 dcredit=-1 maxrepeat=3 reject_username difok=7 enforce_for_root
+        sudo groupadd evualating
+        sudo usermod -aG evualating "nom user"
+
+Hostname and Partitions :
+
+    cd etc/
+    vim Hostname
+    sudo reboot
+    lsblk
+
+    LVM permet de redimensionner dynamiques des storages
+        Physique versus logique
+        Flexibilité de redimensionnement
+        Snapshots et instantanés
+        Migration de données en ligne
+        Prise en charge de RAID logiciel
+
+Sudo :
+
+    sudo systemctl status sudo
+    sudo usermod -aG sudo "new user"
+    cd /var/log/sudo/
+
+UFW / Firewalld :
+
+    sudo systemctl status ufw
+    sudo ufw status numbered
+    sudo ufw allow 8080
+    sudo ufw delete {rule-number-here}  //A check
+
+SSH :
+
+    sudo systemctl status ssh
+    SSH (Secure Shell) est un protocole de communication sécurisé
+        onçu pour permettre l'accès à distance à des ordinateurs
+        et des serveurs via un réseau
+            Connexion sécurisée : donnees cryptees
+            Authentification : basee sur des cles publiques et prive
+            Accès distant
+            Transfert de fichiers sécurisé : CP (Secure Copy) et SFTP (SSH File Transfer Protocol)
+
+    Connexion SSH "new user"
+        systemctl status sshd
+        ssh newuser@127.0.0.1 -p 4242
+
+Script : 
+
+    apt-get install -y net-tools
+    cd /usr/local/bin/
+    touch monitoring.sh
+    sudo crontab -u root -e
+    chmod 777 monitoring.sh
+        Net-tools :
+            Le paquet "net-tools" est un ensemble d'outils 
+            en ligne de commande utilisés pour la configuration
+            et la surveillance du réseau sur les systèmes Linux. 
+            Ces outils offrent une variété de fonctionnalités pour
+            diagnostiquer et gérer les interfaces réseau, les routes,
+            les connexions TCP/IP, etc
+                ifconfig
+                route
+                netstat
+                arp Address Resolution Protocol
+                hostname
+
+
+    explication script :
+        Récupération des informations sur le système :
+            La variable "arc" récupère les informations de l'architecture du système à l'aide de la commande "uname -a".
+            Les variables "pcpu" et "vcpu" récupèrent respectivement le nombre de processeurs physiques et virtuels en analysant le fichier /proc/cpuinfo.
+            Les variables "fram", "uram" et "pram" récupèrent respectivement la mémoire totale, utilisée et le pourcentage d'utilisation de la mémoire en utilisant la commande "free".
+            La variable "fdisk" récupère l'espace disque total en utilisant la commande "df" et en filtrant les lignes concernant les disques montés.
+            Les variables "udisk" et "pdisk" récupèrent respectivement l'espace disque utilisé et le pourcentage d'utilisation du disque.
+
+        Récupération des informations sur l'utilisation du CPU :
+            La variable "cpul" récupère la charge CPU actuelle en utilisant la commande "top".
+
+        Récupération de l'heure du dernier démarrage du système :
+            La variable "lb" récupère l'heure du dernier démarrage du système en analysant la sortie de la commande "who -b".
+
+        Vérification de l'utilisation de LVM :
+            La variable "lvmu" vérifie si LVM est utilisé sur le système en analysant la sortie de la commande "lsblk".
+
+        Récupération du nombre de connexions TCP établies :
+            La variable "ctcp" récupère le nombre de connexions TCP établies en utilisant la commande "ss".
+
+        Récupération du nombre d'utilisateurs connectés :
+            La variable "ulog" récupère le nombre d'utilisateurs connectés en utilisant la commande "users".
+
+        Récupération de l'adresse IP et de l'adresse MAC de l'hôte :
+            Les variables "ip" et "mac" récupèrent respectivement l'adresse IP et l'adresse MAC de l'hôte en utilisant les commandes "hostname -I" et "ip link show".
+
+        Récupération du nombre de commandes sudo exécutées :
+            La variable "cmds" récupère le nombre de commandes sudo exécutées en analysant les journaux système avec la commande "journalctl".
+
+        Affichage des informations avec la commande "wall" :
+            Enfin, toutes les informations collectées sont affichées dans un message envoyé à tous les utilisateurs connectés avec la commande "wall".
+
+    Cron :
+        Le module cron est un service de planification de tâches sur les systèmes d'exploitation de type Unix, y compris Linux.
+        Il permet aux utilisateurs de programmer des tâches à exécuter périodiquement à des moments spécifiés, qu'il s'agisse de scripts,
+        de commandes système ou d'autres programmes.
+
+    Pour empecher le script au demarrage
+        cd /usr/local/bin/
+        touch /var/lock/monitoring.lock
+        sudo crontab -u root -e
+            */10 * * * * [ -f /var/lock/monitoring.lock ] || /usr/local/bin/monitoring.sh
+         
