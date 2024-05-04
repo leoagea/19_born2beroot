@@ -27,7 +27,7 @@ Step 2 : Accessing the VM
         guided with encrypted LVM
         separation /home /var /tmp
 
-    encryption password : Encryption_Key_19
+    encryption password : Encryption_key_19
 
     package manager : deb.debian.org  ??
 
